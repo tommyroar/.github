@@ -1,0 +1,6 @@
+{
+  "name": "Claude PR Assistant",
+  "description": "Responds to @claude mentions in issues, PRs, and reviews. Uses CLAUDE_CODE_OAUTH_TOKEN.",
+  "iconName": "octicon-comment-discussion",
+  "categories": ["Automation"]
+}

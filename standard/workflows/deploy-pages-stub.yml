@@ -1,0 +1,17 @@
+# Canonical Pages-deploy caller stub. Copy to <repo>/.github/workflows/deploy-pages.yml
+# and replace REPO_SLUG. Behavior lives in tommyroar/.github (reusable workflow).
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: tommyroar/.github/.github/workflows/deploy-pages.yml@main
+    with:
+      slug: REPO_SLUG
+    secrets: inherit

@@ -1,0 +1,10 @@
+# Canonical ruff config — source of truth: tommyroar/.github.
+# Repos with a pyproject.toml should inline this under [tool.ruff] / [tool.ruff.lint]
+# instead of shipping a separate ruff.toml (matches tommybot/obsidian-automations).
+target-version = "py311"
+line-length = 100
+
+[lint]
+# pyflakes(F) pycodestyle(E) isort(I) pyupgrade(UP) bugbear(B) comprehensions(C4)
+select = ["E", "F", "I", "UP", "B", "C4"]
+ignore = ["B008"]  # typer/fastapi default-arg idiom, not a real bug

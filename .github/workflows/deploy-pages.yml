@@ -1,0 +1,82 @@
+name: Deploy Pages (reusable)
+
+# Canonical GitHub Pages SPA deploy — source of truth: tommyroar/.github.
+# Push to main  -> production at  https://tommyroar.github.io/<slug>/
+# Pull request   -> staging at    https://tommyroar.github.io/<slug>/staging/   (single shared slot)
+# Callers are thin stubs; see standard/workflows/deploy-pages-stub.yml.
+
+on:
+  workflow_call:
+    inputs:
+      slug:
+        description: Pages base-path slug (usually the repo name), e.g. intentcity.
+        required: true
+        type: string
+      build_dir:
+        description: Directory containing the SPA (its package.json).
+        default: web
+        type: string
+      node_version:
+        default: "20"
+        type: string
+    secrets:
+      MAPBOX_ACCESS_TOKEN:
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  deployments: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'staging' || 'production' }}
+      url: ${{ github.event_name == 'pull_request' && format('https://tommyroar.github.io/{0}/staging/', inputs.slug) || format('https://tommyroar.github.io/{0}/', inputs.slug) }}
+    concurrency:
+      group: github-pages-${{ github.event_name == 'pull_request' && 'staging' || 'production' }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.build_dir }}
+        run: npm install
+
+      - name: Build SPA
+        working-directory: ${{ inputs.build_dir }}
+        env:
+          VITE_STANDALONE: 'true'
+          VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npx vite build --base=/${{ inputs.slug }}/staging/ --outDir ../dist-out/
+          else
+            npx vite build --base=/${{ inputs.slug }}/ --outDir ../dist-out/
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist-out
+          publish_branch: gh-pages
+          destination_dir: ${{ github.event_name == 'pull_request' && 'staging' || '' }}
+          keep_files: true
+
+      - name: Comment staging URL on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '**Staging preview deployed:** https://tommyroar.github.io/${{ inputs.slug }}/staging/'
+            })
