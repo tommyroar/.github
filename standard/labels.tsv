@@ -1,0 +1,9 @@
+# Canonical GitHub labels synced across tommyroar repos by scripts/sync.sh.
+# Columns: name<TAB>color<TAB>description. `gh label create --force` is idempotent
+# (creates if missing, updates color/description if present). Add a row → next
+# `sync.sh --apply` ensures it everywhere.
+proposal	5319E7	Render this open PR's docs as a draft-banded preview on the dev wiki (proposals lane)
+automerge	0e8a16	Auto-merge once CI + newspaper are green (claudesidian add-skill lane)
+hold	b60205	Holds auto-merge (blocking-comments gate)
+blocked	b60205	Holds auto-merge (blocking-comments gate)
+do-not-merge	b60205	Holds auto-merge (blocking-comments gate)

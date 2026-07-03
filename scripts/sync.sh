@@ -9,10 +9,14 @@
 # Idempotent. Safe to re-run (weekly cron) so new repos self-heal into compliance.
 # What it does per owned, non-fork, non-archived repo:
 #   1. ensure the CLAUDE_CODE_OAUTH_TOKEN Actions secret is set
-#   2. install/refresh .github/workflows/claude.yml            (canonical @claude)
-#   3. remove .github/workflows/pr-newspaper.yml               (newspaper retired)
-#   4. Python repos: install .pre-commit-config.yaml, and lint.yml if ruff isn't already in CI
-# File changes land on a branch + PR (never pushed straight to main).
+#   2. ensure the canonical GitHub labels exist (standard/labels.tsv) — set directly,
+#      like the secret, no PR (labels aren't file changes). `proposal` here is what lets a
+#      repo's proposal PRs preview on the dev wiki with no per-repo `gh label create`.
+#   3. install/refresh .github/workflows/claude.yml            (canonical @claude)
+#   4. remove .github/workflows/pr-newspaper.yml               (newspaper retired)
+#   5. Python repos: install .pre-commit-config.yaml, and lint.yml if ruff isn't already in CI
+# File changes land on a branch + PR (never pushed straight to main); secrets + labels are
+# set directly (they're not files).
 set -euo pipefail
 
 OWNER=tommyroar
@@ -20,6 +24,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLAUDE_SRC="$ROOT/.github/workflow-templates/claude.yml"
 PRECOMMIT_SRC="$ROOT/standard/.pre-commit-config.yaml"
 LINT_SRC="$ROOT/standard/workflows/lint.yml"
+LABELS_SRC="$ROOT/standard/labels.tsv"
 BRANCH="chore/standardize-sync"
 
 APPLY=0; [ "${1:-}" = "--apply" ] && APPLY=1
@@ -64,6 +69,21 @@ for r in $repos; do
     echo "  secret CLAUDE_CODE_OAUTH_TOKEN : MISSING -> set"
     [ $APPLY = 1 ] && gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo "$OWNER/$r" --body "$CLAUDE_CODE_OAUTH_TOKEN"
   fi
+
+  # 2) canonical labels (standard/labels.tsv) — set directly, like the secret. `gh label
+  # create --force` is idempotent (creates if missing, updates color/description if present),
+  # so this converges every repo without diffing. Skips comment/blank lines.
+  have=$(gh label list --repo "$OWNER/$r" --limit 200 --json name -q '.[].name' 2>/dev/null || echo "")
+  while IFS=$'\t' read -r lname lcolor ldesc; do
+    [ -z "$lname" ] && continue
+    case "$lname" in \#*) continue;; esac
+    if printf '%s\n' "$have" | grep -qxF "$lname"; then
+      echo "  label $lname : present (ensure canonical)"
+    else
+      echo "  label $lname : MISSING -> create"
+    fi
+    [ $APPLY = 1 ] && gh label create "$lname" --repo "$OWNER/$r" --color "$lcolor" --description "$ldesc" --force >/dev/null 2>&1
+  done < "$LABELS_SRC"
 
   # decide the file changes (collected, then applied once via one PR)
   changes=()

@@ -19,3 +19,15 @@ with a small caller workflow (see that repo's README).
 Generation happens **once**, by the agent that opens/updates a PR (it writes the body
 from the full diff). There is no per-push `claude -p` regeneration. For a human push
 with no agent, run `~/.claude/pr-framework/refresh_pr.sh <n>` locally.
+
+## Canonical labels
+
+`standard/labels.tsv` is the account-wide label set (name · color · description).
+`scripts/sync.sh` ensures each row exists on every owned repo — set directly (like the
+Actions secret), no PR, idempotent via `gh label create --force`. Add a row → the next
+`sync.sh --apply` provisions it everywhere.
+
+The load-bearing one is **`proposal`**: an open PR carrying it renders as a draft-banded
+preview on the dev wiki (see `PROPOSAL_SHAPE.md`). Because the label now syncs from here,
+a new repo's proposal PRs work with **zero** per-repo `gh label create` — the friction
+that motivated this file.
