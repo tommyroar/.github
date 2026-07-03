@@ -22,7 +22,7 @@ PIN_RE='^(cloudflare-tfvend|infra|obsidian)$'
 printf '%-30s %-8s %s\n' REPO STATE NOTE
 for d in "$DEV"/*/; do
   r=$(basename "$d")
-  case "$r" in *.wt|*.clone) continue;; esac
+  case "$r" in _by|*.wt|*.clone) continue;; esac
   [ -d "$d/.git" ] || continue
 
   if [[ "$r" =~ $PIN_RE ]] || [ -f "$d/.git/KEEP" ]; then
