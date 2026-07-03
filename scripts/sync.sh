@@ -12,12 +12,17 @@
 #   2. install/refresh .github/workflows/claude.yml            (canonical @claude)
 #   3. remove .github/workflows/pr-newspaper.yml               (newspaper retired)
 #   4. Python repos: install .pre-commit-config.yaml, and lint.yml if ruff isn't already in CI
+#   5. ensure the `proposal` + `home-automation` labels exist, and install/refresh
+#      .github/workflows/pr-labels.yml (proposal: unconditional on open; home-automation:
+#      a Claude Sonnet subagent's judgment call on the diff — harmless no-op in repos
+#      where it never applies)
 # File changes land on a branch + PR (never pushed straight to main).
 set -euo pipefail
 
 OWNER=tommyroar
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLAUDE_SRC="$ROOT/.github/workflow-templates/claude.yml"
+LABELS_SRC="$ROOT/.github/workflow-templates/pr-labels.yml"
 PRECOMMIT_SRC="$ROOT/standard/.pre-commit-config.yaml"
 LINT_SRC="$ROOT/standard/workflows/lint.yml"
 BRANCH="chore/standardize-sync"
@@ -46,6 +51,16 @@ fi
 
 api_exists() { gh api "repos/$OWNER/$1/contents/$2" >/dev/null 2>&1; }
 
+ensure_label() {
+  local repo="$1" name="$2" color="$3" desc="$4"
+  if gh label list --repo "$OWNER/$repo" --json name -q '.[].name' 2>/dev/null | grep -qFx "$name"; then
+    echo "  label $name : present"
+  else
+    echo "  label $name : MISSING -> create"
+    [ $APPLY = 1 ] && gh label create "$name" --repo "$OWNER/$repo" --color "$color" --description "$desc" --force
+  fi
+}
+
 repos=$(gh repo list "$OWNER" --no-archived --source --limit 200 --json name -q '.[].name' | sort)
 
 for r in $repos; do
@@ -65,6 +80,10 @@ for r in $repos; do
     [ $APPLY = 1 ] && gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo "$OWNER/$r" --body "$CLAUDE_CODE_OAUTH_TOKEN"
   fi
 
+  # 2) proposal + home-automation labels (pr-labels.yml needs both to exist first)
+  ensure_label "$r" "proposal" "8256d0" "Open proposal awaiting a decision"
+  ensure_label "$r" "home-automation" "f9a825" "Smart home / home automation hardware"
+
   # decide the file changes (collected, then applied once via one PR)
   changes=()
   if api_exists "$r" ".github/workflows/claude.yml"; then
@@ -81,6 +100,13 @@ for r in $repos; do
     echo "  pr-newspaper.yml : present -> REMOVE"
     changes+=("del:.github/workflows/pr-newspaper.yml")
   fi
+
+  if api_exists "$r" ".github/workflows/pr-labels.yml"; then
+    echo "  pr-labels.yml    : present (refresh to canonical)"
+  else
+    echo "  pr-labels.yml    : MISSING -> add"
+  fi
+  changes+=("put:.github/workflows/pr-labels.yml:$LABELS_SRC")
 
   if { api_exists "$r" "pyproject.toml" || api_exists "$r" "requirements.txt"; } && ! [[ "$r" =~ $NO_PYLINT_RE ]]; then
     if api_exists "$r" ".pre-commit-config.yaml"; then
@@ -110,11 +136,11 @@ for r in $repos; do
         elif [ "$op" = del ]; then git rm -q --ignore-unmatch "${rest}"; fi
       done
       if ! git diff --cached --quiet; then
-        git commit -q -m "chore: standardize @claude / lint / retire newspaper (via tommyroar/.github sync)"
+        git commit -q -m "chore: standardize @claude / lint / pr-labels / retire newspaper (via tommyroar/.github sync)"
         git push -q -u --force origin "$BRANCH"
         gh pr view "$BRANCH" >/dev/null 2>&1 && { echo "  (PR already open)"; } || \
-        gh pr create --head "$BRANCH" --title "Standardize: @claude + lint + retire newspaper" \
-          --body "Automated sync from tommyroar/.github. Canonical @claude workflow, pre-commit/ruff for Python, newspaper removed. 🤖 Generated with Claude Code" || true
+        gh pr create --head "$BRANCH" --title "Standardize: @claude + lint + pr-labels + retire newspaper" \
+          --body "Automated sync from tommyroar/.github. Canonical @claude workflow, pre-commit/ruff for Python, proposal/home-automation PR labeling, newspaper removed. 🤖 Generated with Claude Code" || true
       fi
     )
     rm -rf "$tmp"

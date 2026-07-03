@@ -1,0 +1,6 @@
+{
+  "name": "PR labels",
+  "description": "Labels PRs: 'proposal' unconditionally, 'home-automation' by a Claude Sonnet subagent's judgment. Uses CLAUDE_CODE_OAUTH_TOKEN.",
+  "iconName": "octicon-tag",
+  "categories": ["Automation"]
+}

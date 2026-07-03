@@ -1,0 +1,63 @@
+name: PR labels
+
+# Canonical PR labeler — source of truth: tommyroar/.github.
+# Synced into every owned repo by scripts/sync.sh (which also ensures the
+# `proposal` and `home-automation` labels exist before this runs).
+#
+# proposal: every PR is an open proposal awaiting a decision (draft ->
+# accepted/published -> merged to ship) — tag it the moment it's opened.
+# home-automation: a Claude Sonnet subagent reads the diff/description and
+# guesses whether it touches home-automation / smart-home hardware. It's a
+# harmless no-op in repos where that never applies.
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  proposal:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Label as an open proposal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr edit "${{ github.event.pull_request.number }}" --repo "${{ github.repository }}" --add-label proposal
+
+  home-automation-guess:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Ask Claude whether this PR is home-automation related
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Decide whether this pull request relates to home automation / smart
+            home hardware (e.g. Home Assistant, Zigbee/Z-Wave/HomeKit devices,
+            smart plugs/sensors/locks, or using a wearable/phone as a physical
+            unlock key). Judge from the actual diff and description, not just
+            file paths. Most repos will not qualify — that's expected.
+
+            If it does, run exactly:
+              gh pr edit ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --add-label home-automation
+            If it doesn't, do nothing.
+
+            Don't add any other label, don't comment, don't edit any files.
+
+          claude_args: |
+            --model claude-sonnet-5
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr edit:*)"
