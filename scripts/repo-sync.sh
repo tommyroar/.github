@@ -19,7 +19,7 @@ slug_of() { printf '%s' "$1" | sed -E 's#\.git$##; s#/$##; s#.*/##'; }
 tmp=$(mktemp)
 for d in "$DEV"/*/; do
   [ -d "$d/.git" ] || continue
-  case "$(basename "$d")" in *.wt|*.clone) continue;; esac
+  case "$(basename "$d")" in _by|*.wt|*.clone) continue;; esac
   u=$(git -C "$d" remote get-url origin 2>/dev/null) || continue
   printf '%s\t%s\n' "$(slug_of "$u")" "$d" >> "$tmp"
 done
@@ -37,3 +37,6 @@ gh repo list "$OWNER" --no-archived --source --limit 200 --json name -q '.[].nam
   :
 done || true
 rm -f "$tmp"
+
+# Refresh the category overlay (_by/) so newly-synced repos get linked.
+[ -x "$(dirname "$0")/categorize.sh" ] && DEV_ROOT="$DEV" "$(dirname "$0")/categorize.sh" || true
