@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# sync.sh — standardize tommyroar repos from the canonical files in this repo.
-# Source of truth: tommyroar/.github.
+# sync.sh — standardize robogeosociety repos from the canonical files in this repo.
+# Source of truth: robogeosociety/.github.
 #
 #   ./scripts/sync.sh            # DRY-RUN (read-only): print the per-repo delta
 #   CLAUDE_CODE_OAUTH_TOKEN=... ./scripts/sync.sh --apply   # set secrets + open PRs
@@ -17,7 +17,9 @@
 # File changes land on a branch + PR (never pushed straight to main).
 set -euo pipefail
 
-OWNER=tommyroar
+ORG=robogeosociety
+# Kept user-owned in the 2026-07 org migration; still part of the standardized fleet.
+EXTRA_REPOS='tommyroar/tommyroar.github.io'
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLAUDE_SRC="$ROOT/.github/workflow-templates/claude.yml"
 STRUCTURE_SRC="$ROOT/.github/workflow-templates/pr-structure-gate.yml"
@@ -43,16 +45,17 @@ RUFF_IN_CI_RE='^(tommybot|obsidian-automations|home-weather-hub|tallest-tree)$'
 # Pure-content repos -> no Python linting even if a requirements.txt exists.
 NO_PYLINT_RE='^(walksheds-wiki|walksheds-dev-wiki)$'
 
-echo "== sync.sh [$MODE]  owner=$OWNER =="
+echo "== sync.sh [$MODE]  org=$ORG =="
 if [ $APPLY = 1 ] && [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
   echo "ERROR: export CLAUDE_CODE_OAUTH_TOKEN before --apply (mint via: claude setup-token)"; exit 1
 fi
 
 api_exists() { gh api "repos/$OWNER/$1/contents/$2" >/dev/null 2>&1; }
 
-repos=$(gh repo list "$OWNER" --no-archived --source --limit 200 --json name -q '.[].name' | sort)
+repos=$( { gh repo list "$ORG" --no-archived --source --limit 200 --json name -q '.[].name' | sed "s#^#$ORG/#"; printf '%s\n' $EXTRA_REPOS; } | sort)
 
-for r in $repos; do
+for full in $repos; do
+  OWNER=${full%%/*}; r=${full##*/}
   [[ "$r" =~ $SKIP_RE ]] && continue
   [ -n "$ONLY" ] && [ "$r" != "$ONLY" ] && continue
   echo; echo "### $r"
@@ -128,11 +131,11 @@ for r in $repos; do
         elif [ "$op" = del ]; then git rm -q --ignore-unmatch "${rest}"; fi
       done
       if ! git diff --cached --quiet; then
-        git commit -q -m "chore: standardize @claude / PR gates / lint (via tommyroar/.github sync)"
+        git commit -q -m "chore: standardize @claude / PR gates / lint (via robogeosociety/.github sync)"
         git push -q -u --force origin "$BRANCH"
         gh pr view "$BRANCH" >/dev/null 2>&1 && { echo "  (PR already open)"; } || \
         gh pr create --head "$BRANCH" --title "Standardize: @claude + PR description gates + lint" \
-          --body "Automated sync from tommyroar/.github. Canonical @claude workflow, the hard pr-structure-gate + agentic pr-style-review PR-description gates, pre-commit/ruff for Python, old newspaper workflow removed. 🤖 Generated with Claude Code" || true
+          --body "Automated sync from robogeosociety/.github. Canonical @claude workflow, the hard pr-structure-gate + agentic pr-style-review PR-description gates, pre-commit/ruff for Python, old newspaper workflow removed. 🤖 Generated with Claude Code" || true
       fi
     )
     rm -rf "$tmp"

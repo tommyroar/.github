@@ -4,7 +4,7 @@
   display (1–2 pages; up to 4 for very complex *code* changes). Most newsworthy
   facts first, supporting detail below, fine print last.
 
-  Full rules + voice: github.com/tommyroar/.github/blob/main/PR_FRAMEWORK.md
+  Full rules + voice: github.com/robogeosociety/.github/blob/main/PR_FRAMEWORK.md
   Two gates check this body: `pr-structure-gate` (a hard CI check — one H1, an
   italic dek, a `> [!NOTE]` masthead, alt text, no heading skips; it BLOCKS if the
   spine is missing) and `pr-style-review` (an agentic, non-blocking length/style/

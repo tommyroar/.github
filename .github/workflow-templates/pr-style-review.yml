@@ -7,7 +7,7 @@ name: PR Style Review
 # single advisory comment and NEVER blocks the merge.
 #
 # Auth: CLAUDE_CODE_OAUTH_TOKEN (already set in every owned repo by scripts/sync.sh).
-# Source of truth: tommyroar/.github. One-click-selectable from the Actions UI.
+# Source of truth: robogeosociety/.github. One-click-selectable from the Actions UI.
 # Full rules + voice: PR_FRAMEWORK.md.
 
 on:
@@ -54,7 +54,7 @@ jobs:
 
             First read the ground truth: PR_FRAMEWORK.md in this repo if present,
             otherwise fetch
-            https://raw.githubusercontent.com/tommyroar/.github/main/PR_FRAMEWORK.md .
+            https://raw.githubusercontent.com/robogeosociety/.github/main/PR_FRAMEWORK.md .
             Then read this PR's description and its diff (`gh pr view` / `gh pr diff`).
 
             Review for:

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # categorize.sh — build a browsable category overlay of symlinks under $DEV_ROOT/_by/
 # from repo-categories.tsv. Repos stay physically flat; _by/ is a pure VIEW.
-# Idempotent (rebuilds _by/ each run). bash 3.2 safe. Source of truth: tommyroar/.github/scripts/.
+# Idempotent (rebuilds _by/ each run). bash 3.2 safe. Source of truth: robogeosociety/.github/scripts/.
 #
 #   DEV_ROOT=~/dev ./categorize.sh          # Air
 #   DEV_ROOT=/Volumes/dev ./categorize.sh   # mini

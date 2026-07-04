@@ -6,7 +6,7 @@ name: PR Structure Gate
 # it only checks objective structure, never length or style, so it does not churn.
 # The flexible length/style/diagram layer lives in pr-style-review.yml (agentic).
 #
-# Source of truth: tommyroar/.github. Synced into owned repos by scripts/sync.sh
+# Source of truth: robogeosociety/.github. Synced into owned repos by scripts/sync.sh
 # and one-click-selectable from the Actions "New workflow" UI. Fully self-contained
 # (no reusable workflow, no companion script). Full rules: PR_FRAMEWORK.md.
 #

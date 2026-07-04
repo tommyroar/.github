@@ -170,7 +170,7 @@ hook or `/dev` deploy step) so the refresh is automatic.
 ## Enforcement — two gates, split by what each is good at
 
 The framework is checked in CI by **two** workflows (canonical copies live in
-`tommyroar/.github/.github/workflow-templates/`, synced into every owned repo by
+`robogeosociety/.github/.github/workflow-templates/`, synced into every owned repo by
 `scripts/sync.sh`). They replace the retired monolithic `pr-newspaper` validator,
 which failed on structure *and* subjective length/style at once and churned.
 
