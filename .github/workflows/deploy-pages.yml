@@ -1,8 +1,8 @@
 name: Deploy Pages (reusable)
 
 # Canonical GitHub Pages SPA deploy — gh-pages-BRANCH model (peaceiris).
-# Push to main -> production at https://tommyroar.github.io/<slug>/
-# Pull request  -> staging at   https://tommyroar.github.io/<slug>/staging/  (single shared slot)
+# Push to main -> production at https://robogeosociety.github.io/<slug>/
+# Pull request  -> staging at   https://robogeosociety.github.io/<slug>/staging/  (single shared slot)
 # Callers pass `secrets: inherit` so MAPBOX_ACCESS_TOKEN flows through.
 
 on:
@@ -77,5 +77,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `**Staging preview deployed:** https://tommyroar.github.io${base}staging/`
+              body: `**Staging preview deployed:** https://robogeosociety.github.io${base}staging/`
             })

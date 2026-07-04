@@ -8,7 +8,9 @@
 #   ./repo-sync.sh --apply    # clone missing, fetch present
 set -euo pipefail
 DEV=/Volumes/dev
-OWNER=tommyroar
+ORG=robogeosociety
+# Kept user-owned in the 2026-07 org migration; still mirrored as part of the fleet.
+EXTRA_REPOS='tommyroar/tommyroar.github.io'
 # obsidian = vault; the mini has a dedicated git-writer clone for it — don't touch here.
 EXCLUDE_RE='^(obsidian)$'
 APPLY=0; [ "${1:-}" = "--apply" ] && APPLY=1
@@ -24,7 +26,8 @@ for d in "$DEV"/*/; do
   printf '%s\t%s\n' "$(slug_of "$u")" "$d" >> "$tmp"
 done
 
-gh repo list "$OWNER" --no-archived --source --limit 200 --json name -q '.[].name' | while read -r r; do
+{ gh repo list "$ORG" --no-archived --source --limit 200 --json name -q '.[].name' | sed "s#^#$ORG/#"; printf '%s\n' $EXTRA_REPOS; } | while read -r full; do
+  o=${full%%/*}; r=${full##*/}
   [[ "$r" =~ $EXCLUDE_RE ]] && { echo "skip  $r (excluded)"; continue; }
   dir=$(awk -F'\t' -v s="$r" '$1==s{print $2; exit}' "$tmp")
   if [ -n "$dir" ]; then
@@ -32,7 +35,7 @@ gh repo list "$OWNER" --no-archived --source --limit 200 --json name -q '.[].nam
     [ $APPLY = 1 ] && { git -C "$dir" fetch --all --prune -q || echo "  fetch failed"; }
   else
     echo "CLONE $r  -> $DEV/$r"
-    [ $APPLY = 1 ] && { gh repo clone "$OWNER/$r" "$DEV/$r" -- -q || echo "  clone failed"; }
+    [ $APPLY = 1 ] && { gh repo clone "$o/$r" "$DEV/$r" -- -q || echo "  clone failed"; }
   fi
   :
 done || true

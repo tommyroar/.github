@@ -1,4 +1,4 @@
-# Canonical ruff config — source of truth: tommyroar/.github.
+# Canonical ruff config — source of truth: robogeosociety/.github.
 # Repos with a pyproject.toml should inline this under [tool.ruff] / [tool.ruff.lint]
 # instead of shipping a separate ruff.toml (matches tommybot/obsidian-automations).
 target-version = "py311"
