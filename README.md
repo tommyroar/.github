@@ -38,3 +38,21 @@ from the full diff). There is no per-push `claude -p` regeneration. For a human 
 with no agent, run `~/.claude/pr-framework/refresh_pr.sh <n>` locally. The two gates
 above then check what was written — the hard gate deterministically, the style review
 with judgment.
+
+## Fleet automation — one scheduler manages every repo
+Standardization doesn't wait for a human to remember to run it. The
+[`fleet-sync.yml`](.github/workflows/fleet-sync.yml) workflow is the CI/CD that keeps
+the whole fleet in compliance, running on the **self-hosted runner on the Mac mini**
+(a container with the `/Volumes/dev` checkout root mounted). Weekly — and on demand — it:
+
+1. **Mirrors** every owned repo into `/Volumes/dev` via
+   [`scripts/repo-sync.sh`](scripts/repo-sync.sh) (clone missing, `git fetch --prune`
+   the rest), so the local checkouts always track GitHub.
+2. **Standardizes** each repo against the canonical files here via
+   [`scripts/sync.sh`](scripts/sync.sh) — opening a PR per repo. This is the path by
+   which the two PR-description gates above (and `@claude` / ruff) reach every repo.
+
+Scheduled runs apply automatically (new repos self-heal into compliance); manual
+`workflow_dispatch` runs default to a read-only dry-run. See the header of
+`fleet-sync.yml` for the one-time runner setup (labels, the `/Volumes/dev` mount, and
+`gh` / `CLAUDE_CODE_OAUTH_TOKEN` auth).
