@@ -1,13 +1,16 @@
 name: Fleet Sync
 
 # Scheduled CI/CD that manages every owned repo from this root (.github) repo.
-# It just drives the two scripts that already exist here, in order:
+# It just drives the scripts that already exist here, in order:
 #   1. scripts/repo-sync.sh — mirror every owned repo into the local checkout root
 #      (/Volumes/dev): clone the missing ones, `git fetch --prune` the rest.
 #   2. scripts/sync.sh      — standardize each mirrored repo against the canonical
 #      files in this repo (@claude, the PR-description gates, ruff), opening a PR
 #      per repo. This is what pushes the pr-structure-gate / pr-style-review
 #      workflows out to the fleet.
+#   3. scripts/labels.sh    — reconcile every repo's labels to scripts/labels.tsv
+#      (the task system, proposal/automerge lane, PR-gate bypasses). Pure GitHub
+#      API, no git; additive — never deletes a repo's bespoke labels.
 #
 # Runs on the self-hosted GitHub Actions runner on the Mac mini (a container with
 # the /Volumes/dev checkout root mounted). Weekly by default so new/changed repos
@@ -68,6 +71,12 @@ jobs:
           ./scripts/sync.sh ${APPLY}
           echo "::endgroup::"
 
+      - name: Reconcile labels against canonical taxonomy
+        run: |
+          echo "::group::labels.sh ${APPLY:-(dry-run)}"
+          ./scripts/labels.sh ${APPLY}
+          echo "::endgroup::"
+
       - name: Job summary
         if: always()
         run: |
@@ -77,4 +86,5 @@ jobs:
             echo "- Trigger: \`${{ github.event_name }}\`"
             echo "- Mirror: \`repo-sync.sh ${APPLY}\` → /Volumes/dev"
             echo "- Standardize: \`sync.sh ${APPLY}\` (per-repo PRs from canonical files)"
+            echo "- Labels: \`labels.sh ${APPLY}\` (reconcile to scripts/labels.tsv)"
           } >> "$GITHUB_STEP_SUMMARY"

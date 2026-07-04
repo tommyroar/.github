@@ -51,6 +51,18 @@ the whole fleet in compliance, running on the **self-hosted runner on the Mac mi
 2. **Standardizes** each repo against the canonical files here via
    [`scripts/sync.sh`](scripts/sync.sh) — opening a PR per repo. This is the path by
    which the two PR-description gates above (and `@claude` / ruff) reach every repo.
+3. **Reconciles labels** on every repo to the canonical taxonomy in
+   [`scripts/labels.tsv`](scripts/labels.tsv) via
+   [`scripts/labels.sh`](scripts/labels.sh) — pure GitHub API, no git. It's
+   additive (creates missing labels, fixes drifted color/description) and never
+   deletes a repo's bespoke labels; the untouched stock GitHub defaults are pruned
+   only under the manual `--prune-stock` opt-in.
+
+The canonical label set spans the three org-wide workflows: the **issue/task system**
+(`human-task`, `machine-task`, `parked`), the **proposal + merge lane** (`proposal`,
+`automerge`, and the `hold`/`blocked`/`do-not-merge` guards), and the **PR-gate
+bypasses** the framework documents (`skip-structure-gate`, `skip-style-review`). Edit
+`labels.tsv` to change the taxonomy; the next fleet-sync propagates it.
 
 Scheduled runs apply automatically (new repos self-heal into compliance); manual
 `workflow_dispatch` runs default to a read-only dry-run. See the header of
